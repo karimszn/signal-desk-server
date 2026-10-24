@@ -1,0 +1,1 @@
+{"name":"signal-desk-server","version":"1.0.0","description":"Always-on market scanner for Signal Desk. Sends phone alerts through ntfy.","main":"server.js","scripts":{"start":"node server.js","once":"node server.js --once","test-notify":"node server.js --test-notify"},"engines":{"node":">=18"},"dependencies":{"ws":"^8.18.0"},"license":"MIT"}
