@@ -1,0 +1,48 @@
+name: Signal Desk scan
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      test_alert:
+        description: 'Send a test alert to my phone instead of scanning'
+        type: boolean
+        default: false
+concurrency:
+  group: scan
+  cancel-in-progress: false
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --omit=dev --no-audit --no-fund
+      - uses: actions/cache/restore@v4
+        with:
+          path: state.json
+          key: state-none
+          restore-keys: state-
+      - name: Send test alert
+        if: ${{ inputs.test_alert }}
+        run: node server.js --test-notify
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      - name: Scan markets
+        if: ${{ !inputs.test_alert }}
+        run: node server.js --once
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          CATEGORIES: ${{ vars.CATEGORIES || 'syn,com,cry' }}
+          TIMEFRAMES: ${{ vars.TIMEFRAMES || '900,14400' }}
+          MIN_CONF: ${{ vars.MIN_CONF || '70' }}
+          CAPITAL: ${{ vars.CAPITAL || '1000' }}
+          RISK_PCT: ${{ vars.RISK_PCT || '1' }}
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: state.json
+          key: state-${{ github.run_id }}
